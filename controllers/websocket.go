@@ -12,13 +12,13 @@ import (
 type DeviceClass int
 
 const (
-	Target DeviceClass = 0
-	Client DeviceClass = 1
+	Target    DeviceClass = 0
+	Client    DeviceClass = 1
 	LastClass DeviceClass = 2
 )
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize: 1024 * 1024 * 10,
+	ReadBufferSize:  1024 * 1024 * 10,
 	WriteBufferSize: 1024 * 1024 * 10,
 }
 
@@ -26,38 +26,7 @@ type WebSocketController struct {
 	beego.Controller
 }
 
-/*
-func (m *WebSocketController) doMessageTarget(conn *websocket.Conn, se *trans.SessionObject) error {
-	for {
-		t, c, e := conn.ReadMessage()
-		if t == -1 || e != nil {
-			return e
-		}
-		e = se.ForwardToClient(t, c)
-		if e != nil {
-			return e
-		}
-	}
-	return nil
-}
-
-
-func (m *WebSocketController) doMessageClient(conn *websocket.Conn, se *trans.SessionObject) error {
-	for {
-		t, c, e := conn.ReadMessage()
-		if t == -1 || e != nil {
-			return e
-		}
-		e = se.ForwardToTarget(t, c)
-		if e != nil {
-			return e
-		}
-	}
-	return nil
-}
-*/
-
-func (m *WebSocketController) accept() (*websocket.Conn, string, bool){
+func (m *WebSocketController) accept() (*websocket.Conn, string, bool) {
 	param, err := m.Input() // (":deviceId")
 	if err != nil {
 		http.Error(m.Ctx.ResponseWriter, "need connect param", 400)
@@ -68,7 +37,7 @@ func (m *WebSocketController) accept() (*websocket.Conn, string, bool){
 		http.Error(m.Ctx.ResponseWriter, "need deviceId", 400)
 		return nil, "", false
 	}
-	ws, err :=  upgrader.Upgrade(m.Ctx.ResponseWriter, m.Ctx.Request, nil)
+	ws, err := upgrader.Upgrade(m.Ctx.ResponseWriter, m.Ctx.Request, nil)
 	if _, ok := err.(websocket.HandshakeError); ok {
 		http.Error(m.Ctx.ResponseWriter, "Not a websocket handshake", 400)
 		return nil, "", false
@@ -88,13 +57,19 @@ func (m *WebSocketController) OnConnect() {
 	deviceClass := param.Get("deviceClass")
 	if len(deviceClass) == 0 {
 		http.Error(m.Ctx.ResponseWriter, "need deviceClass", 400)
-		conn.Close()
+		err := conn.Close()
+		if err != nil {
+			return
+		}
 		return
 	}
 	dcv, err := strconv.Atoi(deviceClass)
 	if err != nil || dcv >= int(LastClass) {
 		http.Error(m.Ctx.ResponseWriter, "deviceClass invalid", 400)
-		conn.Close()
+		err := conn.Close()
+		if err != nil {
+			return
+		}
 		return
 	}
 	// 添加到对应角色管理器
@@ -117,7 +92,7 @@ func (m *WebSocketController) OnConnect() {
 	}
 
 	// 中断连接
-	conn.SetCloseHandler( func(code int , text string) error {
+	conn.SetCloseHandler(func(code int, text string) error {
 		var se *trans.SessionObject = nil
 		switch dcv {
 		case int(Target):
@@ -127,11 +102,9 @@ func (m *WebSocketController) OnConnect() {
 				deviceObject.SetStatus(trans.Lost)
 			}
 			se = deviceObject.GetSession()
-			/*
-			// 单个对象,断开连接时,不自动离开会话
-
-			targetManager.Leave(deviceId)
-			*/
+			if se == nil {
+				targetManager.Leave(deviceId)
+			}
 			break
 		case int(Client):
 			clientManager := trans.ClientManagerInstance()
@@ -140,16 +113,18 @@ func (m *WebSocketController) OnConnect() {
 				deviceObject.SetStatus(trans.Lost)
 			}
 			se = deviceObject.GetSession()
-			/*
-			// 单个对象,断开连接时,不自动离开会话
-			clientManager.Leave(deviceId)
-			*/
+			if se == nil {
+				clientManager.Leave(deviceId)
+			}
 			break
 		default:
 		}
 		// 如果退出的conn包含会话,而且会话内所有端都离线了,那么自动撤销会话
 		if se != nil && se.CanDestroy() {
-			trans.SessionManagerInstance().Destroy(se.GetId())
+			err := trans.SessionManagerInstance().Destroy(se.GetId())
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	})

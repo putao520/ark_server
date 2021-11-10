@@ -7,19 +7,21 @@ import (
 )
 
 type SessionStatus int
+
 const (
-	Working	SessionStatus = 0
-	WaitingTarget SessionStatus = 1
-	WaitingClient SessionStatus = 2
+	Working SessionStatus = 0
+	// WaitingTarget SessionStatus = 1
+	// WaitingClient SessionStatus = 2
 )
+
 type SessionObject struct {
-	id string
+	id     string
 	target *DeviceObject
 	client *DeviceObject
 	status SessionStatus
 }
 
-func SessionObjectNew(target *DeviceObject, client *DeviceObject) (string, *SessionObject){
+func SessionObjectNew(target *DeviceObject, client *DeviceObject) (string, *SessionObject) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		return "", nil
@@ -50,26 +52,36 @@ func (m *SessionObject)ForwardToTarget(messageType int, data []byte) error {
 }
 */
 
-func (m* SessionObject) RestoreTarget(o *websocket.Conn){
+func (m *SessionObject) RestoreTarget(o *websocket.Conn) {
 	m.target.client = o
 	m.target.status = Busy
 	m.toClient(TargetReconnect, nil)
 	for m.target.work {
 		time.Sleep(time.Duration(2) * time.Second)
 	}
-	go ForwardToClient(m)
+	go func() {
+		err := ForwardToClient(m)
+		if err != nil {
+			panic(err)
+		}
+	}()
 }
 
-func (m* SessionObject) RestoreClient(o *websocket.Conn){
+func (m *SessionObject) RestoreClient(o *websocket.Conn) {
 	m.client.client = o
 	m.client.status = Busy
 	for m.client.work {
 		time.Sleep(time.Duration(2) * time.Second)
 	}
-	go ForwardToTarget(m)
+	go func() {
+		err := ForwardToTarget(m)
+		if err != nil {
+			panic(err)
+		}
+	}()
 }
 
-func ForwardToTarget(m* SessionObject) error{
+func ForwardToTarget(m *SessionObject) error {
 	var e error = nil
 	if m.client.work == false {
 		m.client.work = true
@@ -89,7 +101,7 @@ func ForwardToTarget(m* SessionObject) error{
 	return e
 }
 
-func ForwardToClient(m* SessionObject) error{
+func ForwardToClient(m *SessionObject) error {
 	var e error = nil
 	if m.target.work == false {
 		m.target.work = true
@@ -108,36 +120,58 @@ func ForwardToClient(m* SessionObject) error{
 	return e
 }
 
-func (m* SessionObject) Working(){
+func (m *SessionObject) Working() {
 	// m.client.SetStatus(Busy)
-	go ForwardToTarget(m)
+	go func() {
+		err := ForwardToTarget(m)
+		if err != nil {
+			panic(err)
+		}
+	}()
 	// m.target.SetStatus(Busy)
-	go ForwardToClient(m)
+	go func() {
+		err := ForwardToClient(m)
+		if err != nil {
+			panic(err)
+		}
+	}()
 }
 
-func (m* SessionObject) toTarget(cmd resultCmd, content interface{}){
+func (m *SessionObject) toTarget(cmd resultCmd, content interface{}) {
 	r := RealMessageNew(Success, cmd, content)
-	m.target.client.WriteJSON(r)
+	err := m.target.client.WriteJSON(r)
+	if err != nil {
+		panic(err)
+	}
 }
-func (m* SessionObject) toClient(cmd resultCmd, content interface{}){
+func (m *SessionObject) toClient(cmd resultCmd, content interface{}) {
 	r := RealMessageNew(Success, cmd, content)
-	m.client.client.WriteJSON(r)
+	err := m.client.client.WriteJSON(r)
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (m* SessionObject) BroadCast(cmd resultCmd, content interface{}){
+func (m *SessionObject) BroadCast(cmd resultCmd, content interface{}) {
 	r := RealMessageNew(Success, cmd, content)
-	m.client.client.WriteJSON(r)
-	m.target.client.WriteJSON(r)
+	err := m.client.client.WriteJSON(r)
+	if err != nil {
+		panic(err)
+	}
+	err = m.target.client.WriteJSON(r)
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (m* SessionObject)CanDestroy()bool{
+func (m *SessionObject) CanDestroy() bool {
 	return m.client.status == Lost && m.target.status == Lost
 }
 
-func (m* SessionObject)GetId()string{
+func (m *SessionObject) GetId() string {
 	return m.id
 }
 
-func (m* SessionObject)GetTargetClient()*websocket.Conn{
-	return m.target.client
+func (m *SessionObject) GetTarget() *DeviceObject {
+	return m.target
 }

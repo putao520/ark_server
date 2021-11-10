@@ -8,11 +8,12 @@ type RoomCreateRequest struct {
 }
 
 type RoomCreateStatus int
-const(
-	Success				RoomCreateStatus = 0
-	TargetNotExisting	RoomCreateStatus = 1
-	TargetIsBusy		RoomCreateStatus = 2
-	ClientNotExisting	RoomCreateStatus = 3
+
+const (
+	Success           RoomCreateStatus = 0
+	TargetNotExisting RoomCreateStatus = 1
+	TargetIsBusy      RoomCreateStatus = 2
+	ClientNotExisting RoomCreateStatus = 3
 )
 
 // AddRoom 返回会话id或者空字符串
@@ -35,8 +36,14 @@ func AddRoom(v RoomCreateRequest) (string, RoomCreateStatus) {
 		se := co.GetSession()
 		if se != nil {
 			// 断开当前会话目标机连接
-			se.GetTargetClient().Close()
-			trans.SessionManagerInstance().Destroy(se.GetId())
+			err := se.GetTarget().LeaveSession().GetConn().Close()
+			if err != nil {
+				return "", 0
+			}
+			err = trans.SessionManagerInstance().Destroy(se.GetId())
+			if err != nil {
+				return "", 0
+			}
 		}
 	}
 
