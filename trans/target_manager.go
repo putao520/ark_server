@@ -5,13 +5,10 @@ type TargetManager struct {
 }
 
 var targetManagerInstance *DeviceManager
-func TargetManagerInstance() *DeviceManager{
+
+func TargetManagerInstance() *DeviceManager {
 	if targetManagerInstance == nil {
 		targetManagerInstance = DeviceManagerNew()
 	}
 	return targetManagerInstance
-}
-
-func TargetManagerNew()* TargetManager{
-	return &TargetManager{}
 }

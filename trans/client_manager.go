@@ -5,13 +5,10 @@ type ClientManager struct {
 }
 
 var clientManagerInstance *DeviceManager
-func ClientManagerInstance() *DeviceManager{
+
+func ClientManagerInstance() *DeviceManager {
 	if clientManagerInstance == nil {
 		clientManagerInstance = DeviceManagerNew()
 	}
 	return clientManagerInstance
-}
-
-func ClientManagerNew()* ClientManager{
-	return &ClientManager{}
 }
