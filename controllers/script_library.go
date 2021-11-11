@@ -3,9 +3,12 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
+	"server/common"
+	"server/jwt"
 	"server/models"
 	"strconv"
 	"strings"
+	"time"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
@@ -22,6 +25,8 @@ func (c *ScriptLibraryController) URLMapping() {
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("Put", c.Put)
 	c.Mapping("Delete", c.Delete)
+	c.Mapping("Upload", c.Upload)
+	c.Mapping("GeneratorOnceUrl", c.GeneratorOnceUrl)
 }
 
 // Post ...
@@ -173,6 +178,87 @@ func (c *ScriptLibraryController) Delete() {
 	} else {
 		c.Ctx.Output.SetStatus(500)
 		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
+// Upload ...
+// @Title Upload
+// @Description Upload the ScriptLibrary
+// @Param	id		path 	string	true		"upload your script"
+// @Success 200 {string} Upload success!
+// @Failure 403 id is empty
+// @router /Upload/ [post]
+func (c *ScriptLibraryController) Upload() {
+	// 获得当前会话信息
+	userInfoStr := c.Ctx.Input.Param("UserInfo")
+	userInfo, err := jwt.GetSessionInfo([]byte(userInfoStr))
+	if err != nil {
+		c.Ctx.Output.SetStatus(403)
+		c.Data["json"] = "need login"
+	}
+
+	f, h, err := c.GetFile("file")
+	if err != nil {
+		c.Ctx.Output.SetStatus(400)
+		c.Data["json"] = err.Error()
+	}
+	defer f.Close()
+	buffer := make([]byte, h.Size)
+	_, err = f.Read(buffer)
+	if err != nil {
+		c.Ctx.Output.SetStatus(400)
+		c.Data["json"] = err.Error()
+	}
+
+	// 上传文件到 oss
+	ossFileUrl, err := common.MinioManagerInstance().Upload(h.Filename, buffer)
+	if err != nil {
+		c.Ctx.Output.SetStatus(500)
+		c.Data["json"] = err.Error()
+	}
+
+	desc := c.GetString("desc")
+	// 添加数据到数据库
+	logsFileInfo := &models.ScriptLibrary{
+		CreateAt: time.Time{},
+		Creator:  userInfo.Id,
+		Desc:     desc,
+		Name:     h.Filename,
+		Path:     ossFileUrl,
+		UpdateAt: time.Time{},
+	}
+	// 添加文件记录到数据库
+	if _, err := models.AddScriptLibrary(logsFileInfo); err == nil {
+		c.Ctx.Output.SetStatus(201)
+		c.Data["json"] = logsFileInfo
+	} else {
+		c.Ctx.Output.SetStatus(500)
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
+// GeneratorOnceUrl ...
+// @Title GeneratorOnceUrl
+// @Description generator once download file url
+// @Param	id		objectName 	string	true		"The object name you want to download"
+// @Success 200 {string} once download url!
+// @Failure 403 id is empty
+// @router /GeneratorOnceUrl/:id [get]
+func (c *ScriptLibraryController) GeneratorOnceUrl() {
+	objectName := c.Ctx.Input.Param(":id")
+	if len(objectName) == 0 {
+		c.Ctx.Output.SetStatus(400)
+		c.Data["json"] = "need file name"
+	}
+	downloadUrl, err := common.MinioManagerInstance().PresignedGet(objectName, "30s")
+	if err != nil {
+		c.Ctx.Output.SetStatus(500)
+		c.Data["json"] = err.Error()
+	} else {
+		c.Ctx.Output.SetStatus(200)
+		c.Data["json"] = downloadUrl
 	}
 	c.ServeJSON()
 }

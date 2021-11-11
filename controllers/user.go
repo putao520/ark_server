@@ -143,8 +143,7 @@ func (c *UserController) GetAll() {
 // @router / [put]
 func (c *UserController) Put() {
 	userInfoStr := c.Ctx.Input.Param("UserInfo")
-	userInfo := &models.User{Id: ""}
-	err := json.Unmarshal([]byte(userInfoStr), userInfo)
+	userInfo, err := jwt.GetSessionInfo([]byte(userInfoStr))
 	if err != nil {
 		c.Ctx.Output.SetStatus(403)
 		c.Data["json"] = "need login"

@@ -13,7 +13,7 @@ import (
 
 type ScriptLibrary struct {
 	CreateAt time.Time `orm:"column(createAt);type(timestamp);null" description:"添加时间"`
-	Creator  int       `orm:"column(creator)" description:"添加人id"`
+	Creator  string    `orm:"column(creator)" description:"添加人id"`
 	Desc     string    `orm:"column(desc);size(512);null" description:"脚本说明"`
 	Id       int       `orm:"column(id);auto"`
 	Name     string    `orm:"column(name);size(128)" description:"脚本名称"`

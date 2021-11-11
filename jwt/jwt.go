@@ -122,3 +122,12 @@ func FilterJwt(ctx *context.Context) {
 	ctx.Input.SetParam("UserInfo", string(j))
 	// fmt.Println(v)
 }
+
+func GetSessionInfo(data []byte) (*models.User, error) {
+	userInfo := &models.User{Id: ""}
+	err := json.Unmarshal(data, userInfo)
+	if err != nil {
+		return nil, err
+	}
+	return userInfo, nil
+}
