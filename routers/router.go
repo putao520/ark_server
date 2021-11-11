@@ -14,19 +14,25 @@ import (
 )
 
 func init() {
-	// Http.
 	ns := beego.NewNamespace("/v1",
-		beego.NSNamespace("/scriptLibrary",
+
+		beego.NSNamespace("/script_library",
 			beego.NSInclude(
-					&controllers.ScriptLibraryController{},
-				),
+				&controllers.ScriptLibraryController{},
 			),
+		),
+
+		beego.NSNamespace("/user",
+			beego.NSInclude(
+				&controllers.UserController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
+
 	// http
 	beego.Router("/room", &controllers.RoomController{})
 
 	// WebSocket.
 	beego.Router("/ws", &controllers.WebSocketController{}, "get:OnConnect")
-	// beego.Router("/ws/Register", &controllers.WebSocketController{}, "get:onConnect")
 }
