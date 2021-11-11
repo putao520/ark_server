@@ -32,11 +32,11 @@ func MinioNew() *Minio {
 	if err != nil {
 		return nil
 	}
-	bucket, err := beego.AppConfig.String("bucket")
+	bucket, err := beego.AppConfig.String("oss_bucket")
 	if err != nil {
 		return nil
 	}
-	region, err := beego.AppConfig.String("region")
+	region, err := beego.AppConfig.String("oss_region")
 	if err != nil {
 		return nil
 	}

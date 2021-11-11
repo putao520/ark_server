@@ -185,7 +185,6 @@ func (c *ScriptLibraryController) Delete() {
 // Upload ...
 // @Title Upload
 // @Description Upload the ScriptLibrary
-// @Param	id		path 	string	true		"upload your script"
 // @Success 200 {string} Upload success!
 // @Failure 403 id is empty
 // @router /Upload/ [post]
