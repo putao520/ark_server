@@ -9,13 +9,18 @@ package routers
 
 import (
 	"server/controllers"
+	"server/filter"
+	"server/jwt"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
 
 func init() {
-	ns := beego.NewNamespace("/v1",
+	beego.InsertFilter("/room", beego.BeforeExec, jwt.FilterJwt)
+	beego.InsertFilter("/v1/script_library", beego.BeforeExec, jwt.FilterJwt)
+	beego.InsertFilter("/v1/user", beego.BeforeExec, filter.UserFilter)
 
+	ns := beego.NewNamespace("/v1",
 		beego.NSNamespace("/script_library",
 			beego.NSInclude(
 				&controllers.ScriptLibraryController{},
@@ -27,11 +32,14 @@ func init() {
 				&controllers.UserController{},
 			),
 		),
+
+		beego.NSNamespace("/room",
+			beego.NSInclude(
+				&controllers.RoomController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
-
-	// http
-	beego.Router("/room", &controllers.RoomController{})
 
 	// WebSocket.
 	beego.Router("/ws", &controllers.WebSocketController{}, "get:OnConnect")

@@ -3,8 +3,8 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
+	"server/jwt"
 	"server/models"
-	"strconv"
 	"strings"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -17,6 +17,7 @@ type UserController struct {
 
 // URLMapping ...
 func (c *UserController) URLMapping() {
+	c.Mapping("Login", c.Login)
 	c.Mapping("Post", c.Post)
 	c.Mapping("GetOne", c.GetOne)
 	c.Mapping("GetAll", c.GetAll)
@@ -38,9 +39,11 @@ func (c *UserController) Post() {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = v
 		} else {
+			c.Ctx.Output.SetStatus(500)
 			c.Data["json"] = err.Error()
 		}
 	} else {
+		c.Ctx.Output.SetStatus(400)
 		c.Data["json"] = err.Error()
 	}
 	c.ServeJSON()
@@ -55,11 +58,12 @@ func (c *UserController) Post() {
 // @router /:id [get]
 func (c *UserController) GetOne() {
 	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	v, err := models.GetUserById(id)
+	v, err := models.GetUserById(idStr)
 	if err != nil {
+		c.Ctx.Output.SetStatus(500)
 		c.Data["json"] = err.Error()
 	} else {
+		v.Password = ""
 		c.Data["json"] = v
 	}
 	c.ServeJSON()
@@ -121,6 +125,7 @@ func (c *UserController) GetAll() {
 
 	l, err := models.GetAllUser(query, fields, sortby, order, offset, limit)
 	if err != nil {
+		c.Ctx.Output.SetStatus(500)
 		c.Data["json"] = err.Error()
 	} else {
 		c.Data["json"] = l
@@ -135,18 +140,26 @@ func (c *UserController) GetAll() {
 // @Param	body		body 	models.User	true		"body for User content"
 // @Success 200 {object} models.User
 // @Failure 403 :id is not int
-// @router /:id [put]
+// @router / [put]
 func (c *UserController) Put() {
-	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	v := models.User{Id: id}
+	userInfoStr := c.Ctx.Input.Param("UserInfo")
+	userInfo := &models.User{Id: ""}
+	err := json.Unmarshal([]byte(userInfoStr), userInfo)
+	if err != nil {
+		c.Ctx.Output.SetStatus(403)
+		c.Data["json"] = "need login"
+	}
+	idStr := userInfo.Id
+	v := models.User{Id: idStr}
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
 		if err := models.UpdateUserById(&v); err == nil {
 			c.Data["json"] = "OK"
 		} else {
+			c.Ctx.Output.SetStatus(500)
 			c.Data["json"] = err.Error()
 		}
 	} else {
+		c.Ctx.Output.SetStatus(400)
 		c.Data["json"] = err.Error()
 	}
 	c.ServeJSON()
@@ -160,12 +173,55 @@ func (c *UserController) Put() {
 // @Failure 403 id is empty
 // @router /:id [delete]
 func (c *UserController) Delete() {
-	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	if err := models.DeleteUser(id); err == nil {
-		c.Data["json"] = "OK"
+	/*
+		idStr := c.Ctx.Input.Param(":id")
+		if err := models.DeleteUser(idStr); err == nil {
+			c.Data["json"] = "OK"
+		} else {
+			c.Ctx.Output.SetStatus(500)
+			c.Data["json"] = err.Error()
+		}
+	*/
+	c.Ctx.Output.SetStatus(405)
+	c.Data["json"] = "Not Support Method"
+	c.ServeJSON()
+}
+
+// Login ...
+// @Title Login
+// @Description User login
+// @Param	body		body 	models.User	true		"body for User content"
+// @Success 200 {string} token
+// @Failure 403 body is empty
+// @router /Login [post]
+func (c *UserController) Login() {
+	var loginInfo map[string]string
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &loginInfo); err == nil {
+		username, ok := loginInfo["username"]
+		if !ok {
+			c.Ctx.Output.SetStatus(400)
+			c.Data["json"] = "need username"
+		}
+		password, ok := loginInfo["password"]
+		if !ok {
+			c.Ctx.Output.SetStatus(400)
+			c.Data["json"] = "need password"
+		}
+		v, err := models.GetUserByIdAndPassword(username, password)
+		if err != nil {
+			c.Ctx.Output.SetStatus(500)
+			c.Data["json"] = err.Error()
+		}
+		token, err := jwt.GenerateToken(v, 0)
+		if err != nil {
+			c.Ctx.Output.SetStatus(500)
+			c.Data["json"] = err.Error()
+		} else {
+			c.Data["json"] = token
+		}
 	} else {
-		c.Data["json"] = err.Error()
+		c.Ctx.Output.SetStatus(400)
+		c.Data["json"] = err
 	}
 	c.ServeJSON()
 }

@@ -8,8 +8,6 @@ import (
 	"server/trans"
 )
 
-
-
 type RoomController struct {
 	beego.Controller
 }
@@ -17,6 +15,7 @@ type RoomController struct {
 // URLMapping ...
 func (u *RoomController) URLMapping() {
 	u.Mapping("Post", u.Post)
+	u.Mapping("GetAll", u.GetAll)
 }
 
 // @Title CreateRoom
@@ -52,4 +51,22 @@ func (u *RoomController) Post() {
 	} else {
 		out.Write(common.ResponseResultNew(trans.Success, "", uid))
 	}
+}
+
+// GetAll ...
+// @Title Get All
+// @Description get Device
+// @Success 200
+// @Failure 403
+// @router / [get]
+func (u *RoomController) GetAll() {
+	deviceArr := trans.TargetManagerInstance().GetAll()
+	result, err := json.Marshal(deviceArr)
+	if err != nil {
+		u.Ctx.Output.SetStatus(500)
+		u.Data["json"] = err.Error()
+	} else {
+		u.Data["json"] = string(result)
+	}
+	u.ServeJSON()
 }

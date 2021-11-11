@@ -38,9 +38,11 @@ func (c *ScriptLibraryController) Post() {
 			c.Ctx.Output.SetStatus(201)
 			c.Data["json"] = v
 		} else {
+			c.Ctx.Output.SetStatus(500)
 			c.Data["json"] = err.Error()
 		}
 	} else {
+		c.Ctx.Output.SetStatus(400)
 		c.Data["json"] = err.Error()
 	}
 	c.ServeJSON()
@@ -58,6 +60,7 @@ func (c *ScriptLibraryController) GetOne() {
 	id, _ := strconv.Atoi(idStr)
 	v, err := models.GetScriptLibraryById(id)
 	if err != nil {
+		c.Ctx.Output.SetStatus(500)
 		c.Data["json"] = err.Error()
 	} else {
 		c.Data["json"] = v
@@ -121,6 +124,7 @@ func (c *ScriptLibraryController) GetAll() {
 
 	l, err := models.GetAllScriptLibrary(query, fields, sortby, order, offset, limit)
 	if err != nil {
+		c.Ctx.Output.SetStatus(500)
 		c.Data["json"] = err.Error()
 	} else {
 		c.Data["json"] = l
@@ -144,9 +148,11 @@ func (c *ScriptLibraryController) Put() {
 		if err := models.UpdateScriptLibraryById(&v); err == nil {
 			c.Data["json"] = "OK"
 		} else {
+			c.Ctx.Output.SetStatus(500)
 			c.Data["json"] = err.Error()
 		}
 	} else {
+		c.Ctx.Output.SetStatus(400)
 		c.Data["json"] = err.Error()
 	}
 	c.ServeJSON()
@@ -165,6 +171,7 @@ func (c *ScriptLibraryController) Delete() {
 	if err := models.DeleteScriptLibrary(id); err == nil {
 		c.Data["json"] = "OK"
 	} else {
+		c.Ctx.Output.SetStatus(500)
 		c.Data["json"] = err.Error()
 	}
 	c.ServeJSON()

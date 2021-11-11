@@ -3,7 +3,9 @@ package models
 import (
 	"errors"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"reflect"
+	"server/common"
 	"strings"
 
 	"github.com/beego/beego/v2/client/orm"
@@ -11,10 +13,10 @@ import (
 
 type User struct {
 	Age      int    `orm:"column(age);null"`
-	Email    int    `orm:"column(email)"`
+	Email    string `orm:"column(email);size(256)"`
 	Gender   string `orm:"column(gender);size(10);null"`
 	Password string `orm:"column(password);size(256)"`
-	Id       int    `orm:"column(username);pk"`
+	Id       string `orm:"column(username);size(128);pk"`
 }
 
 func (t *User) TableName() string {
@@ -22,6 +24,7 @@ func (t *User) TableName() string {
 }
 
 func init() {
+	common.GetOrm()
 	orm.RegisterModel(new(User))
 }
 
@@ -35,10 +38,21 @@ func AddUser(m *User) (id int64, err error) {
 
 // GetUserById retrieves User by Id. Returns error if
 // Id doesn't exist
-func GetUserById(id int) (v *User, err error) {
+func GetUserById(id string) (v *User, err error) {
 	o := orm.NewOrm()
 	v = &User{Id: id}
 	if err = o.Read(v); err == nil {
+		v.Password = ""
+		return v, nil
+	}
+	return nil, err
+}
+
+func GetUserByIdAndPassword(id string, password string) (v *User, err error) {
+	o := orm.NewOrm()
+	v = &User{Id: id, Password: password}
+	if err = o.Read(v); err == nil {
+		v.Password = ""
 		return v, nil
 	}
 	return nil, err
@@ -104,11 +118,13 @@ func GetAllUser(query map[string]string, fields []string, sortby []string, order
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
 			for _, v := range l {
+				v.Password = ""
 				ml = append(ml, v)
 			}
 		} else {
 			// trim unused fields
 			for _, v := range l {
+				v.Password = ""
 				m := make(map[string]interface{})
 				val := reflect.ValueOf(v)
 				for _, fname := range fields {
@@ -129,6 +145,11 @@ func UpdateUserById(m *User) (err error) {
 	v := User{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
+		m.Id = v.Id
+		m.Email = v.Email
+		if len(m.Password) == 0 {
+			m.Password = v.Password
+		}
 		var num int64
 		if num, err = o.Update(m); err == nil {
 			fmt.Println("Number of records updated in database:", num)
@@ -139,7 +160,7 @@ func UpdateUserById(m *User) (err error) {
 
 // DeleteUser deletes User by Id and returns error if
 // the record to be deleted doesn't exist
-func DeleteUser(id int) (err error) {
+func DeleteUser(id string) (err error) {
 	o := orm.NewOrm()
 	v := User{Id: id}
 	// ascertain id exists in the database

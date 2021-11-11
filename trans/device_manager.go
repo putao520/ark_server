@@ -5,28 +5,39 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type DeviceManager struct{
+type DeviceManager struct {
 	targetQueue map[string]*DeviceObject
 }
 
-func DeviceManagerNew() *DeviceManager{
+func DeviceManagerNew() *DeviceManager {
 	return &DeviceManager{
 		targetQueue: make(map[string]*DeviceObject),
 	}
 }
 
-func (m *DeviceManager) Join(name string, client *websocket.Conn) *DeviceObject{
-	 do, ok := m.targetQueue[name]
-	 if ok {
-		 return do
-	 } else {
-		 do = DeviceObjectNew(name, client)
-		 m.targetQueue[name] = do
-	 }
-	 return do
+func (m *DeviceManager) GetAll() []string {
+	var queue []string
+	targetQueue := m.targetQueue
+	for key, do := range targetQueue {
+		if do.status == Online {
+			queue = append(queue, key)
+		}
+	}
+	return queue
 }
 
-func (m *DeviceManager) Leave(name string){
+func (m *DeviceManager) Join(name string, client *websocket.Conn) *DeviceObject {
+	do, ok := m.targetQueue[name]
+	if ok {
+		return do
+	} else {
+		do = DeviceObjectNew(name, client)
+		m.targetQueue[name] = do
+	}
+	return do
+}
+
+func (m *DeviceManager) Leave(name string) {
 	do, ok := m.targetQueue[name]
 	if ok {
 		delete(m.targetQueue, name)
@@ -34,11 +45,11 @@ func (m *DeviceManager) Leave(name string){
 	do.LeaveSession()
 }
 
-func (m *DeviceManager) Device(name string) (*DeviceObject, error){
+func (m *DeviceManager) Device(name string) (*DeviceObject, error) {
 	dev, ok := m.targetQueue[name]
 	if ok {
 		return dev, nil
-	} else{
+	} else {
 		return nil, errors.New("device is not existing")
 	}
 }

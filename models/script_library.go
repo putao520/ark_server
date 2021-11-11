@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"server/common"
 	"strings"
 	"time"
 
@@ -25,6 +26,7 @@ func (t *ScriptLibrary) TableName() string {
 }
 
 func init() {
+	common.GetOrm()
 	orm.RegisterModel(new(ScriptLibrary))
 }
 
