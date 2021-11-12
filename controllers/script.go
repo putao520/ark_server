@@ -218,7 +218,7 @@ func (c *ScriptController) Upload() {
 
 	// 上传文件到 oss
 	ossFileUrl, err := common.MinioManagerInstance().Upload(h.Filename, buffer)
-	if err != nil {
+	if err != nil || len(ossFileUrl) == 0 {
 		c.Ctx.Output.SetStatus(500)
 		c.Data["json"] = err.Error()
 		c.ServeJSON()
@@ -228,12 +228,12 @@ func (c *ScriptController) Upload() {
 	desc := c.GetString("desc")
 	// 添加数据到数据库
 	logsFileInfo := &models.Script{
-		CreateAt: time.Time{},
+		CreateAt: time.Now(),
 		Creator:  userInfo.Id,
 		Desc:     desc,
 		Name:     h.Filename,
 		Path:     ossFileUrl,
-		UpdateAt: time.Time{},
+		UpdateAt: time.Now(),
 	}
 	// 添加文件记录到数据库
 	if _, err := models.AddScriptLibrary(logsFileInfo); err == nil {

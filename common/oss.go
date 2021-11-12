@@ -80,7 +80,7 @@ func (m *Minio) Upload(fileName string, b []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return resultUpload.Location, nil
+	return resultUpload.Key, nil
 }
 
 func (m *Minio) UploadFile(fileName string, filePath string) (string, error) {
@@ -88,10 +88,14 @@ func (m *Minio) UploadFile(fileName string, filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return resultUpload.Location, nil
+	return resultUpload.Key, nil
 }
 
 func (m *Minio) PresignedGet(objectName string, duration string) (string, error) {
+	_, err := m.Client.GetObject(context.Background(), m.Bucket, objectName, minio.GetObjectOptions{})
+	if err != nil {
+		return "", err
+	}
 	expires, err := time.ParseDuration(duration)
 	if err != nil {
 		return "", err
@@ -101,4 +105,8 @@ func (m *Minio) PresignedGet(objectName string, duration string) (string, error)
 		return "", err
 	}
 	return result.String(), nil
+}
+
+func (m *Minio) Delete(objectName string) error {
+	return m.Client.RemoveObject(context.Background(), m.Bucket, objectName, minio.RemoveObjectOptions{GovernanceBypass: true})
 }

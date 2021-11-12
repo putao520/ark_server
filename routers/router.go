@@ -8,17 +8,17 @@
 package routers
 
 import (
+	beego "github.com/beego/beego/v2/server/web"
 	"server/controllers"
 	"server/filter"
 	"server/jwt"
-
-	beego "github.com/beego/beego/v2/server/web"
 )
 
 func init() {
-	beego.InsertFilter("/v1/room", beego.BeforeExec, jwt.FilterJwt)
-	beego.InsertFilter("/v1/script", beego.BeforeExec, jwt.FilterJwt)
-	beego.InsertFilter("/v1/user", beego.BeforeExec, filter.UserFilter)
+
+	beego.InsertFilter("/v1/room/*", beego.BeforeExec, jwt.FilterJwt)
+	beego.InsertFilter("/v1/script/*", beego.BeforeExec, jwt.FilterJwt)
+	beego.InsertFilter("/v1/user/*", beego.BeforeExec, filter.UserFilter)
 
 	ns := beego.NewNamespace("/v1",
 		beego.NSNamespace("/script",

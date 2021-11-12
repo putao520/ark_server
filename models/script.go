@@ -150,7 +150,11 @@ func DeleteScriptLibrary(id int) (err error) {
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
+		ossName := v.Path
 		if num, err = o.Delete(&Script{Id: id}); err == nil {
+			if len(ossName) > 0 {
+				common.MinioManagerInstance().Delete(ossName)
+			}
 			fmt.Println("Number of records deleted in database:", num)
 		}
 	}
