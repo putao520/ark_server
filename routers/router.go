@@ -16,14 +16,14 @@ import (
 )
 
 func init() {
-	beego.InsertFilter("/room", beego.BeforeExec, jwt.FilterJwt)
-	beego.InsertFilter("/v1/script_library", beego.BeforeExec, jwt.FilterJwt)
+	beego.InsertFilter("/v1/room", beego.BeforeExec, jwt.FilterJwt)
+	beego.InsertFilter("/v1/script", beego.BeforeExec, jwt.FilterJwt)
 	beego.InsertFilter("/v1/user", beego.BeforeExec, filter.UserFilter)
 
 	ns := beego.NewNamespace("/v1",
-		beego.NSNamespace("/script_library",
+		beego.NSNamespace("/script",
 			beego.NSInclude(
-				&controllers.ScriptLibraryController{},
+				&controllers.ScriptController{},
 			),
 		),
 

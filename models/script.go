@@ -11,7 +11,7 @@ import (
 	"github.com/beego/beego/v2/client/orm"
 )
 
-type ScriptLibrary struct {
+type Script struct {
 	CreateAt time.Time `orm:"column(createAt);type(timestamp);null" description:"添加时间"`
 	Creator  string    `orm:"column(creator)" description:"添加人id"`
 	Desc     string    `orm:"column(desc);size(512);null" description:"脚本说明"`
@@ -21,40 +21,40 @@ type ScriptLibrary struct {
 	UpdateAt time.Time `orm:"column(updateAt);type(timestamp);null" description:"更新时间"`
 }
 
-func (t *ScriptLibrary) TableName() string {
+func (t *Script) TableName() string {
 	return "script_library"
 }
 
 func init() {
 	common.GetOrm()
-	orm.RegisterModel(new(ScriptLibrary))
+	orm.RegisterModel(new(Script))
 }
 
-// AddScriptLibrary insert a new ScriptLibrary into database and returns
+// AddScriptLibrary insert a new Script into database and returns
 // last inserted Id on success.
-func AddScriptLibrary(m *ScriptLibrary) (id int64, err error) {
+func AddScriptLibrary(m *Script) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
 	return
 }
 
-// GetScriptLibraryById retrieves ScriptLibrary by Id. Returns error if
+// GetScriptLibraryById retrieves Script by Id. Returns error if
 // Id doesn't exist
-func GetScriptLibraryById(id int) (v *ScriptLibrary, err error) {
+func GetScriptLibraryById(id int) (v *Script, err error) {
 	o := orm.NewOrm()
-	v = &ScriptLibrary{Id: id}
+	v = &Script{Id: id}
 	if err = o.Read(v); err == nil {
 		return v, nil
 	}
 	return nil, err
 }
 
-// GetAllScriptLibrary retrieves all ScriptLibrary matches certain condition. Returns empty list if
+// GetAllScriptLibrary retrieves all Script matches certain condition. Returns empty list if
 // no records exist
 func GetAllScriptLibrary(query map[string]string, fields []string, sortby []string, order []string,
 	offset int64, limit int64) (ml []interface{}, err error) {
 	o := orm.NewOrm()
-	qs := o.QueryTable(new(ScriptLibrary))
+	qs := o.QueryTable(new(Script))
 	// query k=v
 	for k, v := range query {
 		// rewrite dot-notation to Object__Attribute
@@ -104,7 +104,7 @@ func GetAllScriptLibrary(query map[string]string, fields []string, sortby []stri
 		}
 	}
 
-	var l []ScriptLibrary
+	var l []Script
 	qs = qs.OrderBy(sortFields...)
 	if _, err = qs.Limit(limit, offset).All(&l, fields...); err == nil {
 		if len(fields) == 0 {
@@ -127,11 +127,11 @@ func GetAllScriptLibrary(query map[string]string, fields []string, sortby []stri
 	return nil, err
 }
 
-// UpdateScriptLibrary updates ScriptLibrary by Id and returns error if
+// UpdateScriptLibrary updates Script by Id and returns error if
 // the record to be updated doesn't exist
-func UpdateScriptLibraryById(m *ScriptLibrary) (err error) {
+func UpdateScriptLibraryById(m *Script) (err error) {
 	o := orm.NewOrm()
-	v := ScriptLibrary{Id: m.Id}
+	v := Script{Id: m.Id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
@@ -142,15 +142,15 @@ func UpdateScriptLibraryById(m *ScriptLibrary) (err error) {
 	return
 }
 
-// DeleteScriptLibrary deletes ScriptLibrary by Id and returns error if
+// DeleteScriptLibrary deletes Script by Id and returns error if
 // the record to be deleted doesn't exist
 func DeleteScriptLibrary(id int) (err error) {
 	o := orm.NewOrm()
-	v := ScriptLibrary{Id: id}
+	v := Script{Id: id}
 	// ascertain id exists in the database
 	if err = o.Read(&v); err == nil {
 		var num int64
-		if num, err = o.Delete(&ScriptLibrary{Id: id}); err == nil {
+		if num, err = o.Delete(&Script{Id: id}); err == nil {
 			fmt.Println("Number of records deleted in database:", num)
 		}
 	}

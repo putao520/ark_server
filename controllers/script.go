@@ -13,13 +13,13 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 )
 
-// ScriptLibraryController operations for ScriptLibrary
-type ScriptLibraryController struct {
+// ScriptController operations for Script
+type ScriptController struct {
 	beego.Controller
 }
 
 // URLMapping ...
-func (c *ScriptLibraryController) URLMapping() {
+func (c *ScriptController) URLMapping() {
 	c.Mapping("Post", c.Post)
 	c.Mapping("GetOne", c.GetOne)
 	c.Mapping("GetAll", c.GetAll)
@@ -31,13 +31,13 @@ func (c *ScriptLibraryController) URLMapping() {
 
 // Post ...
 // @Title Post
-// @Description create ScriptLibrary
-// @Param	body		body 	models.ScriptLibrary	true		"body for ScriptLibrary content"
-// @Success 201 {int} models.ScriptLibrary
+// @Description create Script
+// @Param	body		body 	models.Script	true		"body for Script content"
+// @Success 201 {int} models.Script
 // @Failure 403 body is empty
 // @router / [post]
-func (c *ScriptLibraryController) Post() {
-	var v models.ScriptLibrary
+func (c *ScriptController) Post() {
+	var v models.Script
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
 		if _, err := models.AddScriptLibrary(&v); err == nil {
 			c.Ctx.Output.SetStatus(201)
@@ -55,12 +55,12 @@ func (c *ScriptLibraryController) Post() {
 
 // GetOne ...
 // @Title Get One
-// @Description get ScriptLibrary by id
+// @Description get Script by id
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.ScriptLibrary
+// @Success 200 {object} models.Script
 // @Failure 403 :id is empty
 // @router /:id [get]
-func (c *ScriptLibraryController) GetOne() {
+func (c *ScriptController) GetOne() {
 	idStr := c.Ctx.Input.Param(":id")
 	id, _ := strconv.Atoi(idStr)
 	v, err := models.GetScriptLibraryById(id)
@@ -75,17 +75,17 @@ func (c *ScriptLibraryController) GetOne() {
 
 // GetAll ...
 // @Title Get All
-// @Description get ScriptLibrary
+// @Description get Script
 // @Param	query	query	string	false	"Filter. e.g. col1:v1,col2:v2 ..."
 // @Param	fields	query	string	false	"Fields returned. e.g. col1,col2 ..."
 // @Param	sortby	query	string	false	"Sorted-by fields. e.g. col1,col2 ..."
 // @Param	order	query	string	false	"Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ..."
 // @Param	limit	query	string	false	"Limit the size of result set. Must be an integer"
 // @Param	offset	query	string	false	"Start position of result set. Must be an integer"
-// @Success 200 {object} models.ScriptLibrary
+// @Success 200 {object} models.Script
 // @Failure 403
 // @router / [get]
-func (c *ScriptLibraryController) GetAll() {
+func (c *ScriptController) GetAll() {
 	var fields []string
 	var sortby []string
 	var order []string
@@ -139,16 +139,16 @@ func (c *ScriptLibraryController) GetAll() {
 
 // Put ...
 // @Title Put
-// @Description update the ScriptLibrary
+// @Description update the Script
 // @Param	id		path 	string	true		"The id you want to update"
-// @Param	body		body 	models.ScriptLibrary	true		"body for ScriptLibrary content"
-// @Success 200 {object} models.ScriptLibrary
+// @Param	body		body 	models.Script	true		"body for Script content"
+// @Success 200 {object} models.Script
 // @Failure 403 :id is not int
 // @router /:id [put]
-func (c *ScriptLibraryController) Put() {
+func (c *ScriptController) Put() {
 	idStr := c.Ctx.Input.Param(":id")
 	id, _ := strconv.Atoi(idStr)
-	v := models.ScriptLibrary{Id: id}
+	v := models.Script{Id: id}
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
 		if err := models.UpdateScriptLibraryById(&v); err == nil {
 			c.Data["json"] = "OK"
@@ -165,12 +165,12 @@ func (c *ScriptLibraryController) Put() {
 
 // Delete ...
 // @Title Delete
-// @Description delete the ScriptLibrary
+// @Description delete the Script
 // @Param	id		path 	string	true		"The id you want to delete"
 // @Success 200 {string} delete success!
 // @Failure 403 id is empty
 // @router /:id [delete]
-func (c *ScriptLibraryController) Delete() {
+func (c *ScriptController) Delete() {
 	idStr := c.Ctx.Input.Param(":id")
 	id, _ := strconv.Atoi(idStr)
 	if err := models.DeleteScriptLibrary(id); err == nil {
@@ -184,23 +184,27 @@ func (c *ScriptLibraryController) Delete() {
 
 // Upload ...
 // @Title Upload
-// @Description Upload the ScriptLibrary
+// @Description Upload the Script
 // @Success 200 {string} Upload success!
 // @Failure 403 id is empty
 // @router /Upload/ [post]
-func (c *ScriptLibraryController) Upload() {
+func (c *ScriptController) Upload() {
 	// 获得当前会话信息
 	userInfoStr := c.Ctx.Input.Param("UserInfo")
 	userInfo, err := jwt.GetSessionInfo([]byte(userInfoStr))
 	if err != nil {
 		c.Ctx.Output.SetStatus(403)
 		c.Data["json"] = "need login"
+		c.ServeJSON()
+		return
 	}
 
 	f, h, err := c.GetFile("file")
 	if err != nil {
 		c.Ctx.Output.SetStatus(400)
 		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
 	}
 	defer f.Close()
 	buffer := make([]byte, h.Size)
@@ -208,6 +212,8 @@ func (c *ScriptLibraryController) Upload() {
 	if err != nil {
 		c.Ctx.Output.SetStatus(400)
 		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
 	}
 
 	// 上传文件到 oss
@@ -215,11 +221,13 @@ func (c *ScriptLibraryController) Upload() {
 	if err != nil {
 		c.Ctx.Output.SetStatus(500)
 		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
 	}
 
 	desc := c.GetString("desc")
 	// 添加数据到数据库
-	logsFileInfo := &models.ScriptLibrary{
+	logsFileInfo := &models.Script{
 		CreateAt: time.Time{},
 		Creator:  userInfo.Id,
 		Desc:     desc,
@@ -245,11 +253,13 @@ func (c *ScriptLibraryController) Upload() {
 // @Success 200 {string} once download url!
 // @Failure 403 id is empty
 // @router /GeneratorOnceUrl/:id [get]
-func (c *ScriptLibraryController) GeneratorOnceUrl() {
+func (c *ScriptController) GeneratorOnceUrl() {
 	objectName := c.Ctx.Input.Param(":id")
 	if len(objectName) == 0 {
 		c.Ctx.Output.SetStatus(400)
 		c.Data["json"] = "need file name"
+		c.ServeJSON()
+		return
 	}
 	downloadUrl, err := common.MinioManagerInstance().PresignedGet(objectName, "30s")
 	if err != nil {
