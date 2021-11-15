@@ -3,7 +3,7 @@
 bee generate appcode -driver=mysql -conn="root:123456@tcp(192.168.75.80:3306)/ksp?charset=utf8"
 ps:注意,会破坏路由文件,如果自定义了路由,需要事先保存原有路由文件
 ```
-
+### 路由自动生成和启动
 ```
-
+bee run
 ```
