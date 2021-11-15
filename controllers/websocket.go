@@ -104,23 +104,27 @@ func (m *WebSocketController) OnConnect() {
 		case int(Target):
 			targetManager := trans.TargetManagerInstance()
 			deviceObject, err := targetManager.Device(deviceId)
-			if err == nil {
-				deviceObject.SetStatus(trans.Lost)
-			}
-			se = deviceObject.GetSession()
-			if se == nil {
-				targetManager.Leave(deviceId)
+			if deviceObject != nil {
+				if err == nil {
+					deviceObject.SetStatus(trans.Lost)
+				}
+				se = deviceObject.GetSession()
+				if se == nil {
+					targetManager.Leave(deviceId)
+				}
 			}
 			break
 		case int(Client):
 			clientManager := trans.ClientManagerInstance()
 			deviceObject, err := clientManager.Device(deviceId)
-			if err == nil {
-				deviceObject.SetStatus(trans.Lost)
-			}
-			se = deviceObject.GetSession()
-			if se == nil {
-				clientManager.Leave(deviceId)
+			if deviceObject != nil {
+				if err == nil {
+					deviceObject.SetStatus(trans.Lost)
+				}
+				se = deviceObject.GetSession()
+				if se == nil {
+					clientManager.Leave(deviceId)
+				}
 			}
 			break
 		default:

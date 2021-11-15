@@ -1,0 +1,5 @@
+docker build -t ark-server .
+docker tag ark-server 192.168.75.80:5000/ark-server:2021111501
+docker push 192.168.75.80:5000/ark-server:2021111501
+
+docker run -d --name ark-server-service -p 0.0.0.0:6080:8080 192.168.75.80:5000/ark-server:2021111501
